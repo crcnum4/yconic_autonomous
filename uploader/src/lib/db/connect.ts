@@ -31,8 +31,6 @@ async function connectDB(): Promise<typeof mongoose> {
     // Use MONGODB_URI as-is - it should already contain the database name
     const connectionString = MONGODB_URI;
 
-    console.log('Connecting to MongoDB:', connectionString.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')); // Hide credentials in logs
-
     cached.promise = mongoose.connect(connectionString, opts).then((mongoose) => {
       console.log('MongoDB connected successfully');
       return mongoose;
