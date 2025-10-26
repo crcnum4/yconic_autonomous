@@ -1,16 +1,11 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
-import { MongoDBAdapter } from '@next-auth/mongodb-adapter';
-import { MongoClient } from 'mongodb';
 import bcrypt from 'bcryptjs';
 import connectDB from '@/lib/db/connect';
 import User from '@/lib/db/models/User';
 
-const client = new MongoClient(process.env.MONGODB_URI! + process.env.MONGODB_TABLE!);
-
 export const authOptions: NextAuthOptions = {
-  adapter: MongoDBAdapter(client),
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -70,7 +65,6 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
-    signUp: '/auth/signup',
   },
 };
 
