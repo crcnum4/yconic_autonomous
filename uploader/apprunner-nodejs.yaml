@@ -1,5 +1,5 @@
 version: 1.0
-runtime: docker
+runtime: nodejs22
 build:
   commands:
     build:
@@ -9,8 +9,8 @@ build:
       - npm run build
       - echo "Build completed"
 run:
-  runtime-version: latest
-  command: node server.js
+  runtime-version: 22
+  command: npm start
   network:
     port: 3000
     env: PORT
