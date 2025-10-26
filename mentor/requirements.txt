@@ -1,0 +1,25 @@
+# LLM & Embeddings
+langchain
+langchain-community
+langchain-openai
+chromadb
+ollama
+
+# Document Processing
+pypdf
+python-docx
+python-pptx
+
+# AWS S3
+boto3
+
+# Utilities
+python-dotenv
+pydantic
+
+# Optional: Advanced text splitting
+tiktoken
+
+# API Server (for Next.js integration)
+fastapi
+uvicorn[standard]

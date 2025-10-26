@@ -1,0 +1,73 @@
+{
+  "evaluation_framework": {
+    "description": "Startup evaluation rubrics for mentorship and analysis",
+    "categories": [
+      {
+        "name": "Team & Execution",
+        "weight": 0.25,
+        "criteria": [
+          "Team experience and track record",
+          "Execution velocity and milestones achieved",
+          "Decision-making speed and quality",
+          "Communication patterns and clarity"
+        ]
+      },
+      {
+        "name": "Market & Traction",
+        "weight": 0.30,
+        "criteria": [
+          "Market size and growth potential",
+          "Customer acquisition and retention",
+          "Revenue growth and unit economics",
+          "Product-market fit indicators"
+        ]
+      },
+      {
+        "name": "Product & Technology",
+        "weight": 0.20,
+        "criteria": [
+          "Technical complexity and moat",
+          "Product differentiation",
+          "Development velocity",
+          "Technical debt management"
+        ]
+      },
+      {
+        "name": "Business Model",
+        "weight": 0.15,
+        "criteria": [
+          "Revenue model clarity",
+          "Scalability potential",
+          "Unit economics",
+          "Capital efficiency"
+        ]
+      },
+      {
+        "name": "Strategic Position",
+        "weight": 0.10,
+        "criteria": [
+          "Competitive positioning",
+          "Partnership quality",
+          "Fundraising readiness",
+          "Risk management"
+        ]
+      }
+    ]
+  },
+  "red_flags": [
+    "High team turnover",
+    "Inconsistent messaging to investors",
+    "Declining customer engagement",
+    "Runway less than 6 months without clear path to funding",
+    "Pivot without clear rationale",
+    "Poor response to customer feedback"
+  ],
+  "green_flags": [
+    "Strong month-over-month growth",
+    "High customer retention",
+    "Clear value proposition",
+    "Experienced team with relevant domain expertise",
+    "Strong investor interest",
+    "Efficient capital deployment"
+  ]
+}
