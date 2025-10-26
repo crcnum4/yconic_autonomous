@@ -1,4 +1,4 @@
-# Yconic Autonomous - Document Uploader
+# Yconic Autostart - Document Uploader
 
 A Next.js application for uploading and managing documents with S3 storage and MongoDB persistence. Supports Zoom notes, calendar data, and email archives with AI-ready processing hooks.
 

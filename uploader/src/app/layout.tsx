@@ -6,7 +6,7 @@ import { Providers } from '@/components/Providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Yconic Autonomous - Document Uploader',
+  title: 'Yconic Autostart - Document Uploader',
   description: 'Upload and manage your documents with AI-powered analysis',
 };
 
