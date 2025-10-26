@@ -17,5 +17,3 @@ run:
       value: production
     - name: PORT
       value: "3000"
-logging:
-  level: INFO
