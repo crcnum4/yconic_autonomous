@@ -14,13 +14,23 @@ export const generatePresignedPutUrl = async (
   contentType: string,
   expiresIn: number = 3600 // 1 hour
 ): Promise<string> => {
+  console.log('Generating presigned URL for:', {
+    bucket: process.env.S3_BUCKET_NAME,
+    key: s3Key,
+    contentType,
+    expiresIn
+  });
+
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET_NAME!,
     Key: s3Key,
     ContentType: contentType,
   });
 
-  return await getSignedUrl(s3Client, command, { expiresIn });
+  const presignedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+  console.log('Generated presigned URL:', presignedUrl);
+  
+  return presignedUrl;
 };
 
 export const generateS3Key = (userId: string, originalName: string): string => {

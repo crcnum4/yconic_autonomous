@@ -20,7 +20,15 @@ export const Uploader = ({ onUploadComplete }: UploaderProps) => {
   const [isUploading, setIsUploading] = useState(false);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const newFiles: FileWithProgress[] = acceptedFiles.map(file => ({
+    const validFiles = acceptedFiles.filter(file => {
+      if (file.size === 0) {
+        console.warn(`Skipping empty file: ${file.name}`);
+        return false;
+      }
+      return true;
+    });
+    
+    const newFiles: FileWithProgress[] = validFiles.map(file => ({
       file,
       progress: 0,
       status: 'pending',
@@ -56,20 +64,24 @@ export const Uploader = ({ onUploadComplete }: UploaderProps) => {
 
     try {
       // Step 1: Get presigned URLs
+      const fileData = files.map(f => ({
+        originalName: f.file.name,
+        mimeType: f.file.type,
+        byteSize: f.file.size,
+      }));
+      
+      console.log('Sending file data:', fileData);
+      
       const presignedResponse = await fetch('/api/upload/create-presigned', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          files: files.map(f => ({
-            originalName: f.file.name,
-            mimeType: f.file.type,
-            byteSize: f.file.size,
-          })),
-        }),
+        body: JSON.stringify({ files: fileData }),
       });
 
       if (!presignedResponse.ok) {
-        throw new Error('Failed to get presigned URLs');
+        const errorData = await presignedResponse.json();
+        console.error('Presigned URL error:', errorData);
+        throw new Error(errorData.error || 'Failed to get presigned URLs');
       }
 
       const { results } = await presignedResponse.json();
@@ -83,6 +95,11 @@ export const Uploader = ({ onUploadComplete }: UploaderProps) => {
         ));
 
         try {
+          console.log('Uploading file:', fileWithProgress.file.name);
+          console.log('Presigned URL:', presignedData.presignedUrl);
+          console.log('File size:', fileWithProgress.file.size);
+          console.log('File type:', fileWithProgress.file.type);
+          
           const response = await fetch(presignedData.presignedUrl, {
             method: 'PUT',
             body: fileWithProgress.file,
@@ -91,8 +108,13 @@ export const Uploader = ({ onUploadComplete }: UploaderProps) => {
             },
           });
 
+          console.log('Upload response status:', response.status);
+          console.log('Upload response headers:', Object.fromEntries(response.headers.entries()));
+
           if (!response.ok) {
-            throw new Error('Upload failed');
+            const errorText = await response.text();
+            console.error('Upload failed with response:', errorText);
+            throw new Error(`Upload failed: ${response.status} ${response.statusText}`);
           }
 
           setFiles(prev => prev.map((f, i) => 
@@ -117,23 +139,34 @@ export const Uploader = ({ onUploadComplete }: UploaderProps) => {
         }
       });
 
-      await Promise.all(uploadPromises);
+      const uploadResults = await Promise.all(uploadPromises);
 
       // Step 3: Complete upload
-      const completedFiles = files.filter(f => f.status === 'completed');
-      if (completedFiles.length > 0) {
-        await fetch('/api/upload/complete', {
+      const successfulUploads = uploadResults.filter(result => result !== undefined);
+      if (successfulUploads.length > 0) {
+        console.log('Completing upload for files:', successfulUploads.length);
+        
+        const completeResponse = await fetch('/api/upload/complete', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            files: completedFiles.map(f => ({
-              s3Key: f.s3Key!,
-              originalName: f.file.name,
-              mimeType: f.file.type,
-              byteSize: f.file.size,
+            files: successfulUploads.map(result => ({
+              s3Key: result.s3Key,
+              originalName: result.originalName,
+              mimeType: result.mimeType,
+              byteSize: result.byteSize,
             })),
           }),
         });
+
+        if (!completeResponse.ok) {
+          const errorData = await completeResponse.json();
+          console.error('Complete upload error:', errorData);
+          throw new Error(errorData.error || 'Failed to complete upload');
+        }
+
+        const completeData = await completeResponse.json();
+        console.log('Upload completed successfully:', completeData);
       }
 
       onUploadComplete?.(files);

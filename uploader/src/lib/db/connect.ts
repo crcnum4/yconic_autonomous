@@ -32,16 +32,8 @@ async function connectDB(): Promise<typeof mongoose> {
       bufferCommands: false,
     };
 
-    // Build the connection string properly
-    let connectionString = MONGODB_URI;
-    
-    // If MONGODB_URI doesn't end with a slash, add one
-    if (!connectionString.endsWith('/')) {
-      connectionString += '/';
-    }
-    
-    // Add the database name
-    connectionString += MONGODB_TABLE;
+    // Use MONGODB_URI as-is - it should already contain the database name
+    const connectionString = MONGODB_URI;
 
     console.log('Connecting to MongoDB:', connectionString.replace(/\/\/[^:]+:[^@]+@/, '//***:***@')); // Hide credentials in logs
 

@@ -11,7 +11,7 @@ const createPresignedSchema = z.object({
   files: z.array(z.object({
     originalName: z.string().min(1),
     mimeType: z.string().min(1),
-    byteSize: z.number().positive(),
+    byteSize: z.number().min(0), // Allow 0 byte files
   })).min(1).max(10), // Limit to 10 files per request
 });
 

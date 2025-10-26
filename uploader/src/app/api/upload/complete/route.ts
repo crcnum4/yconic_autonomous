@@ -25,7 +25,10 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate request body
     const body = await request.json();
+    console.log('Complete upload request body:', body);
+    
     const { files } = completeUploadSchema.parse(body);
+    console.log('Parsed files:', files);
 
     await connectDB();
 
@@ -52,7 +55,15 @@ export async function POST(request: NextRequest) {
         category,
       });
 
+      console.log('Saving document:', {
+        userId: session.user.id,
+        originalName: file.originalName,
+        s3Key: file.s3Key,
+        category
+      });
+
       await document.save();
+      console.log('Document saved successfully:', document._id);
       documents.push(document);
     }
 
