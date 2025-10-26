@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 
-const PYTHON_API_URL = process.env.PYTHON_API_URL || 'http://localhost:8000';
+const PYTHON_API_URL = process.env.PYTHON_API_URL || 'https://yconic-mentor-api.onrender.com';
 
 interface Message {
   id: string;
