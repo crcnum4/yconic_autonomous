@@ -31,5 +31,17 @@ run:
       value: "application/pdf,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/calendar,text/csv,message/rfc822,application/mbox"
     - name: AUTH_USE_GOOGLE
       value: "false"
+    - name: NEXTAUTH_URL
+      value: "https://m3qknejspz.us-east-1.awsapprunner.com/"
   secrets:
-    - value-from: arn:aws:secretsmanager:us-east-1:092639723477:secret:yconic/automation-K4mEUg
+    - name: NEXTAUTH_SECRET
+      value-from: "arn:aws:secretsmanager:us-east-1:092639723477:secret:yconic/automation-K4mEUg:NEXTAUTH_SECRET::"
+    - name: MONGODB_URI
+      value-from: "arn:aws:secretsmanager:us-east-1:092639723477:secret:yconic/automation-K4mEUg:MONGODB_URI::"
+    - name: MONGODB_TABLE
+      value-from: "arn:aws:secretsmanager:us-east-1:092639723477:secret:yconic/automation-K4mEUg:MONGODB_TABLE::"
+    - name: AWS_ACCESS_KEY_ID
+      value-from: "arn:aws:secretsmanager:us-east-1:092639723477:secret:yconic/automation-K4mEUg:AWS_ACCESS_KEY_ID::"
+    - name: AWS_SECRET_ACCESS_KEY
+      value-from: "arn:aws:secretsmanager:us-east-1:092639723477:secret:yconic/automation-K4mEUg:AWS_SECRET_ACCESS_KEY::"
+    
