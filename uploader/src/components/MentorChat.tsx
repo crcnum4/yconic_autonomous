@@ -26,7 +26,7 @@ export const MentorChat = () => {
 
   const checkHealth = async () => {
     try {
-      const response = await fetch(`${PYTHON_API_URL}/api/mentor/health`);
+      const response = await fetch(`${PYTHON_API_URL}/health`);
       const data = await response.json();
       setIsHealthy(data.status === 'healthy');
     } catch (error) {
@@ -59,7 +59,7 @@ export const MentorChat = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${PYTHON_API_URL}/api/mentor/ask`, {
+      const response = await fetch(`${PYTHON_API_URL}/ask`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,7 +97,7 @@ export const MentorChat = () => {
 
   const handleClear = async () => {
     try {
-      await fetch(`${PYTHON_API_URL}/api/mentor/clear`, { method: 'POST' });
+      await fetch(`${PYTHON_API_URL}/clear`, { method: 'POST' });
       setMessages([]);
     } catch (error) {
       console.error('Failed to clear conversation:', error);
