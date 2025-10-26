@@ -1,5 +1,6 @@
 # Use the official Node.js 18 image as base
-FROM node:18-alpine AS base
+# Specify platform for macOS compatibility with AWS App Runner (Linux x86_64)
+FROM --platform=linux/amd64 node:18-alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps
