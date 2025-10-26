@@ -49,6 +49,7 @@ async def startup_event():
 # Request/Response models
 class Question(BaseModel):
     question: str
+    user_id: str
     conversation_id: Optional[str] = None
 
 
@@ -76,6 +77,21 @@ async def ask_question(question: Question):
         raise HTTPException(status_code=503, detail="Mentor not initialized")
 
     try:
+        # Always reload documents for this specific user (for hackathon - ensures fresh data)
+        current_user_prefix = f"user/{question.user_id}/"
+        should_reload = (
+            not hasattr(mentor, 'current_user_prefix') or
+            mentor.current_user_prefix != current_user_prefix
+        )
+
+        # Force reload every time for hackathon (comment out for production)
+        should_reload = True
+
+        if should_reload:
+            print(f"📂 Loading documents for user: {question.user_id}")
+            mentor.load_user_documents(question.user_id)
+            mentor.current_user_prefix = current_user_prefix
+
         result = mentor.ask(question.question)
 
         return Answer(
@@ -86,6 +102,9 @@ async def ask_question(question: Question):
         )
 
     except Exception as e:
+        print(f"❌ Error processing question: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -70,30 +70,40 @@ class YconicMentor:
 
     def _load_documents_from_s3(self):
         """Load documents from S3 and create vector store"""
+        from langchain_core.documents import Document
+
         if not self.s3_bucket:
             print("⚠️  No S3 bucket configured. Using empty vector store.")
             print("   Set S3_BUCKET_NAME in .env to load documents")
             # Create empty vectorstore for testing
-            from langchain.schema import Document
             dummy_doc = [Document(page_content="No documents loaded yet.", metadata={"source": "system"})]
             self.vectorstore_manager.create_vectorstore(dummy_doc)
             return
 
-        # Load from S3
-        loader = S3DocumentLoader(
-            bucket_name=self.s3_bucket,
-            prefix=self.s3_prefix
-        )
+        try:
+            # Load from S3
+            loader = S3DocumentLoader(
+                bucket_name=self.s3_bucket,
+                prefix=self.s3_prefix
+            )
 
-        # Load and split documents
-        chunks = loader.load_and_split()
+            # Load and split documents
+            chunks = loader.load_and_split()
 
-        if not chunks:
-            print("⚠️  No documents found in S3")
-            return
+            if not chunks:
+                print("⚠️  No documents found in S3. Creating empty vector store.")
+                dummy_doc = [Document(page_content="No documents loaded yet. Upload documents to S3.", metadata={"source": "system"})]
+                self.vectorstore_manager.create_vectorstore(dummy_doc)
+                return
 
-        # Create vector store
-        self.vectorstore_manager.create_vectorstore(chunks)
+            # Create vector store
+            self.vectorstore_manager.create_vectorstore(chunks)
+
+        except Exception as e:
+            print(f"⚠️  Error loading from S3: {e}")
+            print("   Creating empty vector store. Fix S3 permissions or upload documents to continue.")
+            dummy_doc = [Document(page_content="No documents loaded yet. Check S3 permissions.", metadata={"source": "system"})]
+            self.vectorstore_manager.create_vectorstore(dummy_doc)
 
     def _initialize_llm(self):
         """Initialize LLM with Ollama/OpenAI fallback"""
@@ -158,6 +168,65 @@ class YconicMentor:
         """Manually reload documents from S3"""
         print("\n🔄 Reloading documents from S3...")
         self._load_documents_from_s3()
+
+    def load_user_documents(self, user_id: str):
+        """Load documents for a specific user from S3"""
+        from langchain_core.documents import Document
+
+        print(f"\n📂 Loading documents for user: {user_id}")
+        s3_prefix = f"user/{user_id}/"
+        print(f"🔍 S3 Bucket: {self.s3_bucket}")
+        print(f"🔍 S3 Prefix: {s3_prefix}")
+        print(f"🔍 Full path: s3://{self.s3_bucket}/{s3_prefix}")
+
+        if not self.s3_bucket:
+            print("⚠️  No S3 bucket configured. Using empty vector store.")
+            dummy_doc = [Document(page_content="No documents loaded yet.", metadata={"source": "system"})]
+            self.vectorstore_manager.create_vectorstore(dummy_doc)
+            self._rebuild_rag_chain()
+            return
+
+        try:
+            # Load from S3 with user-specific prefix
+            print(f"📥 Creating S3DocumentLoader...")
+            loader = S3DocumentLoader(
+                bucket_name=self.s3_bucket,
+                prefix=s3_prefix
+            )
+            print(f"✓ S3DocumentLoader created")
+
+            # Load and split documents
+            chunks = loader.load_and_split()
+
+            if not chunks:
+                print(f"⚠️  No documents found for user {user_id}. Creating empty vector store.")
+                dummy_doc = [Document(page_content=f"No documents uploaded yet for this user.", metadata={"source": "system"})]
+                self.vectorstore_manager.create_vectorstore(dummy_doc)
+                self._rebuild_rag_chain()
+                return
+
+            print(f"✓ Loaded {len(chunks)} document chunks for user {user_id}")
+            # Recreate vector store with user's documents
+            self.vectorstore_manager.create_vectorstore(chunks)
+
+            # Rebuild RAG chain with new vector store
+            self._rebuild_rag_chain()
+
+        except Exception as e:
+            print(f"⚠️  Error loading documents for user {user_id}: {e}")
+            dummy_doc = [Document(page_content="Error loading documents. Check S3 permissions.", metadata={"source": "system"})]
+            self.vectorstore_manager.create_vectorstore(dummy_doc)
+            self._rebuild_rag_chain()
+
+    def _rebuild_rag_chain(self):
+        """Rebuild the RAG chain with the current vector store"""
+        print("🔄 Rebuilding RAG chain with new vector store...")
+        self.rag_chain = RAGChain(
+            vectorstore_manager=self.vectorstore_manager,
+            llm_wrapper=self.llm_wrapper,
+            rubrics_path=self.rubrics_path if os.path.exists(self.rubrics_path) else None
+        )
+        print("✓ RAG chain rebuilt")
 
 
 def main():
