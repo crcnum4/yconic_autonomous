@@ -1,73 +1,296 @@
 {
-  "evaluation_framework": {
-    "description": "Startup evaluation rubrics for mentorship and analysis",
+  "mentorship_rubric": {
+    "metadata": {
+      "name": "YC0N1C Communications-Cadence Rubric",
+      "version": "1.0.0",
+      "created_at": "2025-10-26",
+      "applies_to": ["emails", "calendar_entries", "slack_messages"],
+      "overall_score_range": "0-100",
+      "tier_thresholds": [
+        { "tier": "Strong", "min": 75, "max": 100 },
+        { "tier": "Moderate", "min": 50, "max": 74 },
+        { "tier": "Needs Improvement", "min": 0, "max": 49 }
+      ],
+      "missing_data_policy": { "on_missing_metric": "impute_min_score" }
+    },
+    "weights": {
+      "responsiveness_followthrough": 0.18,
+      "conversion_momentum": 0.14,
+      "relationship_health": 0.12,
+      "operational_cadence": 0.14,
+      "execution_coordination": 0.12,
+      "icp_fit": 0.1,
+      "data_hygiene": 0.1,
+      "risk_compliance": 0.1
+    },
     "categories": [
       {
-        "name": "Team & Execution",
-        "weight": 0.25,
-        "criteria": [
-          "Team experience and track record",
-          "Execution velocity and milestones achieved",
-          "Decision-making speed and quality",
-          "Communication patterns and clarity"
-        ]
+        "key": "responsiveness_followthrough",
+        "label": "Responsiveness and Follow-through",
+        "weight": 0.18,
+        "metrics": [
+          {
+            "name": "Average Reply Latency (minutes)",
+            "paths": ["$.emails[*].messages[*].timestamp"],
+            "description": "Mean minutes from client email to first startup reply within each thread.",
+            "scoring": {
+              "method": "latency_inverse",
+              "parameters": { "min_minutes": 0, "max_minutes": 2880 },
+              "map_to": "0-100"
+            }
+          },
+          {
+            "name": "Follow-up Rate",
+            "paths": ["$.emails[*].messages[*]"],
+            "description": "Percent of threads where the startup sends at least one follow-up after no client response for 48 hours.",
+            "scoring": {
+              "method": "presence_ratio",
+              "parameters": { "predicate": "startup_followup_after_48h" },
+              "map_to": "0-100"
+            }
+          },
+          {
+            "name": "Thread Resolution Rate",
+            "paths": ["$.emails[*].category"],
+            "description": "Percent of threads reaching a clear outcome stage.",
+            "scoring": {
+              "method": "stage_progression",
+              "parameters": { "stages_order": ["outreach", "demo_followup", "pricing_discussion", "negotiation", "won|lost"] },
+              "map_to": "0-100"
+            }
+          }
+        ],
+        "guidance": {
+          "high": "You respond quickly and keep threads moving. Systematize follow-ups and add a no-response sequence on day 2 and day 5.",
+          "medium": "Response times and follow-ups are inconsistent. Add SLA targets and automate reminders.",
+          "low": "Threads stall and replies are slow. Create a reply-time SLA and a 3-step follow-up cadence."
+        }
       },
       {
-        "name": "Market & Traction",
-        "weight": 0.30,
-        "criteria": [
-          "Market size and growth potential",
-          "Customer acquisition and retention",
-          "Revenue growth and unit economics",
-          "Product-market fit indicators"
-        ]
+        "key": "conversion_momentum",
+        "label": "Conversion Momentum",
+        "weight": 0.14,
+        "metrics": [
+          {
+            "name": "High-Probability Thread Share",
+            "paths": ["$.emails[*].probability_of_conversion"],
+            "description": "Share of threads with probability_of_conversion >= 70.",
+            "scoring": { "method": "presence_ratio", "parameters": { "threshold": 70 }, "map_to": "0-100" }
+          },
+          {
+            "name": "Stage Ratio Demo→Pricing",
+            "paths": ["$.emails[*].category"],
+            "description": "Ratio of demo_followup to pricing_discussion threads.",
+            "scoring": { "method": "ratio", "parameters": { "from": "demo_followup", "to": "pricing_discussion", "ideal": 1.0 }, "map_to": "0-100" }
+          }
+        ],
+        "guidance": {
+          "high": "Momentum is building. Add deadline-driven offers to accelerate commits.",
+          "medium": "Interest without conversion. Tighten qualification and propose next steps during demos.",
+          "low": "Top-of-funnel not converting. Rework pitch and add proof points aligned to ICP."
+        }
       },
       {
-        "name": "Product & Technology",
-        "weight": 0.20,
-        "criteria": [
-          "Technical complexity and moat",
-          "Product differentiation",
-          "Development velocity",
-          "Technical debt management"
-        ]
+        "key": "relationship_health",
+        "label": "Relationship Health",
+        "weight": 0.12,
+        "metrics": [
+          {
+            "name": "Sentiment Balance",
+            "paths": ["$.emails[*].messages[*].body", "$.slack_messages[*].messages[*].message_text"],
+            "description": "Keyword heuristic comparing positive to negative cues.",
+            "scoring": {
+              "method": "keyword_heuristic",
+              "parameters": {
+                "keywords_positive": ["yes", "great", "move forward", "ready", "pilot", "approve"],
+                "keywords_negative": ["not a fit", "too much", "concern", "delay", "no budget"]
+              },
+              "map_to": "0-100"
+            }
+          },
+          {
+            "name": "Next-Step Clarity",
+            "paths": ["$.emails[*].messages[*].body"],
+            "description": "Presence of explicit next steps or scheduled actions.",
+            "scoring": {
+              "method": "presence_ratio",
+              "parameters": { "predicate": "contains_next_step" },
+              "map_to": "0-100"
+            }
+          }
+        ],
+        "guidance": {
+          "high": "Tone and clarity are solid. Keep scripting next steps into every message.",
+          "medium": "Mixed signals. Standardize closing lines with a concrete CTA and time window.",
+          "low": "Unclear and negative tone. Rewrite templates to ask one clear question per email."
+        }
       },
       {
-        "name": "Business Model",
-        "weight": 0.15,
-        "criteria": [
-          "Revenue model clarity",
-          "Scalability potential",
-          "Unit economics",
-          "Capital efficiency"
-        ]
+        "key": "operational_cadence",
+        "label": "Operational Cadence",
+        "weight": 0.14,
+        "metrics": [
+          {
+            "name": "Meetings per Week",
+            "paths": ["$.calendar_entries[*].start_time"],
+            "description": "Count of meetings in the measured week.",
+            "scoring": { "method": "rate_per_week", "parameters": { "min": 0, "max": 12 }, "map_to": "0-100" }
+          },
+          {
+            "name": "Customer-facing Ratio",
+            "paths": ["$.calendar_entries[*].category"],
+            "description": "Share of customer-facing events vs total.",
+            "scoring": { "method": "ratio", "parameters": { "from": "customer_*", "to": "all_events", "ideal": 0.5 }, "map_to": "0-100" }
+          }
+        ],
+        "guidance": {
+          "high": "Cadence supports learning. Protect customer-facing time on the calendar.",
+          "medium": "Some activity. Anchor two customer sessions per week minimum.",
+          "low": "Too few meetings. Block recurring discovery and demo slots."
+        }
       },
       {
-        "name": "Strategic Position",
+        "key": "execution_coordination",
+        "label": "Execution Coordination",
+        "weight": 0.12,
+        "metrics": [
+          {
+            "name": "Decision-to-Chatter Ratio",
+            "paths": ["$.slack_messages[*].messages[*].message_text"],
+            "description": "Share of messages that record decisions or assignments.",
+            "scoring": { "method": "presence_ratio", "parameters": { "predicate": "decision_or_assignment" }, "map_to": "0-100" }
+          },
+          {
+            "name": "Owner Assignment Presence",
+            "paths": ["$.slack_messages[*].messages[*].message_text"],
+            "description": "Presence of explicit owners and deadlines.",
+            "scoring": { "method": "presence_ratio", "parameters": { "predicate": "owner_and_due" }, "map_to": "0-100" }
+          }
+        ],
+        "guidance": {
+          "high": "Tight coordination. Keep DRIs and due dates in each thread.",
+          "medium": "Some ownership but lacks deadlines. Add a simple template for tasks.",
+          "low": "Ambiguous ownership. Enforce DRI and due date on every action."
+        }
+      },
+      {
+        "key": "icp_fit",
+        "label": "ICP and Use-case Fit",
         "weight": 0.10,
-        "criteria": [
-          "Competitive positioning",
-          "Partnership quality",
-          "Fundraising readiness",
-          "Risk management"
-        ]
+        "metrics": [
+          {
+            "name": "Fit Evidence Share",
+            "paths": ["$.emails[*].messages[*].body", "$.calendar_entries[*].description", "$.slack_messages[*].messages[*].message_text"],
+            "description": "Presence of phrases that indicate clear ICP fit and repeatable use case.",
+            "scoring": {
+              "method": "keyword_heuristic",
+              "parameters": { "keywords_positive": ["pilot", "use case", "after hours", "coverage", "booking", "POS integration"] },
+              "map_to": "0-100"
+            }
+          }
+        ],
+        "guidance": {
+          "high": "ICP is clear. Double down with tailored proof points.",
+          "medium": "Partial fit. Narrow persona and tighten offer.",
+          "low": "Weak fit. Re-segment and rewrite ICP hypothesis."
+        }
+      },
+      {
+        "key": "data_hygiene",
+        "label": "Data Hygiene and Coverage",
+        "weight": 0.10,
+        "metrics": [
+          {
+            "name": "Timestamp Completeness",
+            "paths": ["$.emails[*].messages[*].timestamp", "$.calendar_entries[*].start_time", "$.slack_messages[*].messages[*].timestamp"],
+            "description": "Percent of records with valid ISO timestamps.",
+            "scoring": { "method": "completeness_ratio", "parameters": { "required": true }, "map_to": "0-100" }
+          },
+          {
+            "name": "Thread Integrity",
+            "paths": ["$.emails[*].messages[*]"],
+            "description": "Percent of threads with >= 2 messages and consistent subject.",
+            "scoring": { "method": "presence_ratio", "parameters": { "predicate": "min_depth_and_subject_consistency" }, "map_to": "0-100" }
+          }
+        ],
+        "guidance": {
+          "high": "Clean data. Maintain structure and naming conventions.",
+          "medium": "Some gaps. Add checks for timestamps and subject lines.",
+          "low": "Messy records. Standardize logging and enforce minimal fields."
+        }
+      },
+      {
+        "key": "risk_compliance",
+        "label": "Risk, Compliance, and Integration Readiness",
+        "weight": 0.10,
+        "metrics": [
+          {
+            "name": "Compliance Mentions",
+            "paths": ["$.emails[*].messages[*].body", "$.slack_messages[*].messages[*].message_text"],
+            "description": "Detection of compliance requirements and mitigation steps.",
+            "scoring": {
+              "method": "keyword_heuristic",
+              "parameters": { "keywords_positive": ["HIPAA", "BAA", "PII", "retention policy", "encryption"], "keywords_negative": ["breach", "cannot", "blocked"] },
+              "map_to": "0-100"
+            }
+          },
+          {
+            "name": "Integration Planning",
+            "paths": ["$.calendar_entries[*].description", "$.slack_messages[*].messages[*].message_text"],
+            "description": "References to integration readiness and sequencing.",
+            "scoring": {
+              "method": "presence_ratio",
+              "parameters": { "predicate": "integration_reference" },
+              "map_to": "0-100"
+            }
+          }
+        ],
+        "guidance": {
+          "high": "Risks are identified and managed. Publish a one-pager for buyers.",
+          "medium": "Partial coverage. Document policies and integration roadmap.",
+          "low": "Gaps in compliance or integrations. Address one critical item first."
+        }
       }
-    ]
-  },
-  "red_flags": [
-    "High team turnover",
-    "Inconsistent messaging to investors",
-    "Declining customer engagement",
-    "Runway less than 6 months without clear path to funding",
-    "Pivot without clear rationale",
-    "Poor response to customer feedback"
-  ],
-  "green_flags": [
-    "Strong month-over-month growth",
-    "High customer retention",
-    "Clear value proposition",
-    "Experienced team with relevant domain expertise",
-    "Strong investor interest",
-    "Efficient capital deployment"
-  ]
+    ],
+    "playbooks": {
+      "Strong": [
+        "Scale what is working; add price testing and referenceable case studies.",
+        "Lock SLAs and publish a buyer-readiness checklist.",
+        "Automate follow-ups and schedule weekly customer councils."
+      ],
+      "Moderate": [
+        "Choose one riskiest assumption to test in 7 days.",
+        "Double interview cadence and tighten ICP filters.",
+        "Rewrite CTAs with a single next step and a deadline."
+      ],
+      "Needs Improvement": [
+        "Refactor ICP and problem statement in customer words.",
+        "Run three small experiments in two weeks with pass/fail criteria.",
+        "Institute reply-time SLAs and a 3-touch follow-up sequence."
+      ]
+    },
+    "experiments_generator": {
+      "rule": "Select the two lowest-scoring categories and output three experiments that directly target their weakest metrics. Each experiment includes hypothesis, setup, success_metric, and timebox_days."
+    },
+    "computed_results_schema": {
+      "overall": { "score": 0, "tier": "Strong|Moderate|Needs Improvement", "summary": "" },
+      "categories": [
+        {
+          "key": "<category_key>",
+          "label": "<label>",
+          "weight": 0.0,
+          "score": 0,
+          "tier": "Strong|Moderate|Needs Improvement",
+          "metrics": [
+            { "name": "<metric>", "raw_value": "<any>", "score": 0, "details": "<how computed>" }
+          ],
+          "mentorship_note": "<short actionable coaching>"
+        }
+      ],
+      "prioritized_actions": [
+        { "title": "", "why": "", "next_step": "", "owner_placeholder": "", "due_in_days": 7 }
+      ],
+      "warnings": ["missing metric: <name>", "incomplete timestamp fields in emails"]
+    }
+  }
 }

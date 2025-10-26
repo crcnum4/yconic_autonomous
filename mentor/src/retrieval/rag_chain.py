@@ -7,8 +7,8 @@ import json
 from typing import List, Optional
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
-from langchain.prompts import PromptTemplate
-from langchain.schema import Document
+from langchain_core.prompts import PromptTemplate
+from langchain_core.documents import Document
 
 from src.embeddings.vector_store import VectorStoreManager
 from src.llm.llm_wrapper import LLMWrapper
@@ -65,8 +65,18 @@ Your role is to:
 
 """
         if self.rubrics:
-            rubrics_text = "\n\nEVALUATION RUBRICS:\n" + json.dumps(self.rubrics, indent=2)
-            base_prompt += rubrics_text + "\n\nUse these rubrics to inform your analysis and recommendations.\n"
+            # Create a text summary of rubrics instead of raw JSON to avoid template variable conflicts
+            rubric_name = self.rubrics.get('mentorship_rubric', {}).get('metadata', {}).get('name', 'Unknown')
+            categories = self.rubrics.get('mentorship_rubric', {}).get('categories', [])
+
+            rubrics_text = f"\n\nEVALUATION FRAMEWORK: {rubric_name}\n"
+            rubrics_text += "You should evaluate the startup across these key areas:\n"
+
+            for cat in categories:
+                rubrics_text += f"- {cat.get('label', '')}: {cat.get('weight', 0)*100:.0f}% weight\n"
+
+            rubrics_text += "\nUse these evaluation criteria to inform your analysis and recommendations.\n"
+            base_prompt += rubrics_text
 
         return base_prompt
 

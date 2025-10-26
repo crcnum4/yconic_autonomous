@@ -3,11 +3,18 @@ S3 Document Loader
 Loads documents from S3 bucket and extracts text
 """
 import os
+import io
 import boto3
 from typing import List
-from langchain_community.document_loaders import S3DirectoryLoader, S3FileLoader
-from langchain.schema import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+try:
+    from docx import Document as DocxDocument
+    HAS_DOCX = True
+except ImportError:
+    HAS_DOCX = False
+    print("⚠️  python-docx not installed. Install with: pip install python-docx")
 
 
 class S3DocumentLoader:
@@ -38,24 +45,70 @@ class S3DocumentLoader:
             separators=["\n\n", "\n", " ", ""]
         )
 
-    def load_documents(self) -> List[Document]:
-        """Load all documents from S3 bucket"""
-        print(f"Loading documents from s3://{self.bucket_name}/{self.prefix}")
+    def _extract_text_from_docx(self, file_content: bytes) -> str:
+        """Extract text from a .docx file"""
+        if not HAS_DOCX:
+            return ""
 
         try:
-            # Use LangChain's S3DirectoryLoader
-            loader = S3DirectoryLoader(
-                bucket=self.bucket_name,
-                prefix=self.prefix
-            )
-            documents = loader.load()
-
-            print(f"Loaded {len(documents)} documents from S3")
-            return documents
-
+            doc = DocxDocument(io.BytesIO(file_content))
+            text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+            return text
         except Exception as e:
-            print(f"Error loading from S3: {e}")
+            print(f"  ⚠️  Error parsing .docx: {e}")
+            return ""
+
+    def load_documents(self) -> List[Document]:
+        """Load all documents from S3 bucket using fast custom loader"""
+        print(f"\n🔍 Searching S3 path: s3://{self.bucket_name}/{self.prefix}")
+
+        # First, list what files are available
+        files = self.list_documents()
+        if not files:
+            print(f"⚠️  No files found in s3://{self.bucket_name}/{self.prefix}")
             return []
+
+        print(f"✓ Found {len(files)} files:")
+        for f in files[:10]:  # Show first 10 files
+            print(f"  - {f}")
+        if len(files) > 10:
+            print(f"  ... and {len(files) - 10} more")
+
+        # Load documents using fast custom method
+        documents = []
+        print(f"⏳ Loading {len(files)} documents...")
+
+        for i, key in enumerate(files, 1):
+            try:
+                print(f"  [{i}/{len(files)}] Loading {key.split('/')[-1]}...")
+
+                # Download file from S3
+                response = self.s3_client.get_object(Bucket=self.bucket_name, Key=key)
+                file_content = response['Body'].read()
+
+                # Extract text based on file type
+                if key.endswith('.docx'):
+                    text = self._extract_text_from_docx(file_content)
+                elif key.endswith('.txt'):
+                    text = file_content.decode('utf-8')
+                else:
+                    print(f"  ⚠️  Unsupported file type: {key}")
+                    continue
+
+                if text:
+                    doc = Document(
+                        page_content=text,
+                        metadata={"source": key}
+                    )
+                    documents.append(doc)
+                    print(f"  ✓ Loaded {len(text)} characters")
+
+            except Exception as e:
+                print(f"  ❌ Error loading {key}: {e}")
+                continue
+
+        print(f"✓ Successfully loaded {len(documents)} documents from S3")
+        return documents
 
     def load_and_split(self) -> List[Document]:
         """Load documents and split into chunks"""

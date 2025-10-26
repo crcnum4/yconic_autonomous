@@ -5,7 +5,7 @@ import os
 from typing import Optional
 from langchain_community.llms import Ollama
 from langchain_openai import ChatOpenAI
-from langchain.schema import BaseLanguageModel
+from langchain_core.language_models import BaseLanguageModel
 
 
 class LLMWrapper:

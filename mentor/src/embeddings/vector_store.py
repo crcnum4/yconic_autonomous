@@ -3,8 +3,9 @@ Vector Store Manager using ChromaDB
 Handles embeddings and retrieval
 """
 import os
+import shutil
 from typing import List
-from langchain.schema import Document
+from langchain_core.documents import Document
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import OllamaEmbeddings
 from langchain_openai import OpenAIEmbeddings
@@ -47,6 +48,23 @@ class VectorStoreManager:
         """Create a new vector store from documents"""
         if not documents:
             raise ValueError("No documents provided")
+
+        # Clear existing vector store first to prevent data leakage between users
+        if self.vectorstore is not None:
+            try:
+                print("🗑️  Clearing old vector store...")
+                self.vectorstore.delete_collection()
+                self.vectorstore = None
+            except Exception as e:
+                print(f"⚠️  Could not clear old collection: {e}")
+
+        # Also delete the persist directory to ensure clean slate
+        if os.path.exists(self.persist_directory):
+            try:
+                print("🗑️  Deleting old ChromaDB directory...")
+                shutil.rmtree(self.persist_directory)
+            except Exception as e:
+                print(f"⚠️  Could not delete old directory: {e}")
 
         print(f"Creating vector store with {len(documents)} documents...")
 
