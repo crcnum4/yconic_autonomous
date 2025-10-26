@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: yconic-mentor-api
+    runtime: python
+    rootDir: mentor
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        value: us-east-1
+      - key: S3_BUCKET_NAME
+        value: yconic-autonomous
+      - key: USE_OLLAMA
+        value: false
+      - key: TEMPERATURE
+        value: 0.3
+      - key: MAX_TOKENS
+        value: 2000
+      - key: CHROMA_PERSIST_DIRECTORY
+        value: ./chroma_db
