@@ -33,6 +33,8 @@ run:
       value: "false"
     - name: NEXTAUTH_URL
       value: "https://m3qknejspz.us-east-1.awsapprunner.com/"
+    - name: PYTHON_API_URL
+      value: "https://yconic-mentor-api.onrender.com/"
   secrets:
     - name: NEXTAUTH_SECRET
       value-from: "arn:aws:secretsmanager:us-east-1:092639723477:secret:yconic/automation-K4mEUg:NEXTAUTH_SECRET::"
