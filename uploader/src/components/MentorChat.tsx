@@ -2,8 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 
-const PYTHON_API_URL = process.env.PYTHON_API_URL || 'https://yconic-mentor-api.onrender.com';
-
 interface Message {
   id: string;
   type: 'user' | 'assistant';
@@ -26,7 +24,7 @@ export const MentorChat = () => {
 
   const checkHealth = async () => {
     try {
-      const response = await fetch(`${PYTHON_API_URL}/health`);
+      const response = await fetch('/api/mentor/health');
       const data = await response.json();
       setIsHealthy(data.status === 'healthy');
     } catch (error) {
@@ -59,7 +57,7 @@ export const MentorChat = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${PYTHON_API_URL}/ask`, {
+      const response = await fetch('/api/mentor/ask', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,7 +95,7 @@ export const MentorChat = () => {
 
   const handleClear = async () => {
     try {
-      await fetch(`${PYTHON_API_URL}/clear`, { method: 'POST' });
+      await fetch('/api/mentor/clear', { method: 'POST' });
       setMessages([]);
     } catch (error) {
       console.error('Failed to clear conversation:', error);
